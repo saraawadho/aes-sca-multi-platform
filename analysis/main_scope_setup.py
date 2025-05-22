@@ -26,7 +26,7 @@ def main():
     scope.lecroy.query("*OPC?")
     scope.lecroy.write("C1:VOLT_DIV 1V")
     scope.lecroy.query("*OPC?")
-    scope.lecroy.write("C3:VOLT_DIV 13mV")
+    scope.lecroy.write("C3:VOLT_DIV 11mV")
     scope.lecroy.query("*OPC?")
     scope.lecroy.write("C1:TRIG_LEVEL 1500mV")
     scope.lecroy.query("*OPC?")

@@ -3,28 +3,29 @@ import matplotlib.pyplot as plt
 import h5py
 
 def main():
-    filepath = 'aes_traces_10k_key_0.hdf5'
-    with h5py.File(filepath, 'r') as f:
-        key = f["key"][:]
-        plaintexts = f["plaintexts"][:,:]
-        ciphertexts = f["ciphertexts"][:,:]
-        traces = (f["traces"][:,:]).astype(float)
-        nb_of_bits = f["traces"].attrs['bits_per_sample']
-        traces = (traces - (2**(nb_of_bits-1))) / (2**(nb_of_bits))
+    filepath = 'traces.hdf5'
 
-    plt.plot(traces[5,:])
+    with h5py.File(filepath, 'r') as f:
+        nb_of_traces = f["power"].shape[1]
+        nb_of_samples = f["power"].shape[2]
+        trace_single = f["power"][0,0,:]
+        trace_mean = np.zeros((nb_of_samples), dtype=float)
+        for i in range(nb_of_traces):
+            trace_mean += f["power"][0,i,:]
+    trace_mean /= nb_of_traces
+
+    plt.plot(trace_single, linewidth=0.3)
     plt.xlabel("Time [Samples]")
     plt.ylabel("Power consumption")
     plt.title("A single trace")
-    plt.savefig("exercise_spa_solution_1.png", dpi=300)
+    plt.savefig("spa_trace_single.png", dpi=300)
     plt.close()
 
-    traces_mean = np.mean(traces, axis=0)
-    plt.plot(traces_mean)
+    plt.plot(trace_mean, linewidth=0.3)
     plt.xlabel("Time [Samples]")
     plt.ylabel("Power consumption")
     plt.title("Mean trace")
-    plt.savefig("exercise_spa_solution_2.png", dpi=300)
+    plt.savefig("spa_trace_mean.png", dpi=300)
     plt.close()
 
     print("In the mean trace, a pattern with 10 repetitions is clearly visible.")

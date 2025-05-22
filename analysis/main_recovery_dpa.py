@@ -5,23 +5,16 @@ from aes import AES
 from tqdm import tqdm
 
 def main():
+    filepath = 'traces.hdf5'
+    first_round_start = 2000
+    first_round_stop = 4000
 
-
-    AES.test_correctness()
-
-
-    raise ValueError()
-
-
-
-    filepath = 'aes_traces_10k_key_0.hdf5'
     with h5py.File(filepath, 'r') as f:
-        key = f["key"][:]
-        plaintexts = f["plaintexts"][:,:]
-        traces = (f["traces"][:,:5000]).astype(float)
-        nb_of_bits = f["traces"].attrs['bits_per_sample']
-        traces = (traces - (2**(nb_of_bits-1))) / (2**(nb_of_bits))
+        key = f["keys"][0,:]
+        plaintexts = f["plaintexts"][0,:,:]
+        traces = (f["power"][0,:,first_round_start:first_round_stop]).astype(float)
 
+    print("Computing Difference of Means (DoMs)...")
     nb_of_samples = traces.shape[1]
     doms = np.zeros((16, 256, nb_of_samples), dtype=float)
     for subkey in tqdm(range(256)):
@@ -33,12 +26,13 @@ def main():
             dom = np.mean(traces[ind,:],axis=0) - np.mean(traces[~ind,:], axis=0)
             doms[i,subkey,:] = dom
 
+    print("Recovering subkeys...")
     for i in range(16):
-        plt.plot(np.transpose(doms[i,:,:]))
+        plt.plot(np.transpose(doms[i,:,:]), linewidth=0.3)
         plt.xlabel("Time [Samples]")
         plt.ylabel("DoM")
         plt.title("DPA: 256 subkey candidates for S-box {:d}".format(i+1))
-        plt.savefig("exercise_dpa_solution_{:d}.png".format(i+1), dpi=300)
+        plt.savefig("dpa_dom_sbox_{:d}.png".format(i+1), dpi=300)
         plt.close()
 
     doms = np.max(abs(doms), axis=2)

@@ -21,14 +21,16 @@ def pearson_correlation(x, y):
     return corrcoef
 
 def main():
-    filepath = 'aes_traces_10k_key_0.hdf5'
-    with h5py.File(filepath, 'r') as f:
-        key = f["key"][:]
-        plaintexts = f["plaintexts"][:,:]
-        traces = (f["traces"][:,:5000]).astype(float)
-        nb_of_bits = f["traces"].attrs['bits_per_sample']
-        traces = (traces - (2**(nb_of_bits-1))) / (2**(nb_of_bits))
+    filepath = 'traces.hdf5'
+    first_round_start = 2000
+    first_round_stop = 4000
 
+    with h5py.File(filepath, 'r') as f:
+        key = f["keys"][0,:]
+        plaintexts = f["plaintexts"][0,:,:]
+        traces = (f["power"][0,:,first_round_start:first_round_stop]).astype(float)
+
+    print("Computing Pearson's correlation coefficient...")
     nb_of_samples = traces.shape[1]
     corrcoefs = np.zeros((16, 256, nb_of_samples), dtype=float)
     for subkey in tqdm(range(256)):
@@ -38,12 +40,13 @@ def main():
         cc = pearson_correlation(hw, traces)
         corrcoefs[:,subkey,:] = cc
 
+    print("Recovering subkeys...")
     for i in range(16):
-        plt.plot(np.transpose(corrcoefs[i,:,:]))
+        plt.plot(np.transpose(corrcoefs[i,:,:]), linewidth=0.3)
         plt.xlabel("Time [Samples]")
         plt.ylabel("Pearson's correlation coefficient")
         plt.title("CPA: 256 subkey candidates S-box {:d}".format(i+1))
-        plt.savefig("exercise_cpa_solution_{:d}.png".format(i+1), dpi=300)
+        plt.savefig("cpa_sbox_{:d}.png".format(i+1), dpi=300)
         plt.close()
 
     corrcoefs = np.max(abs(corrcoefs), axis=2)

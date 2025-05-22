@@ -27,10 +27,10 @@ def main():
             cw308.write_key(key.tobytes())
             for j in tqdm(range(nb_of_traces)):
                 plaintext = np.random.randint(0, high=256, size=16, dtype=np.uint8)
-                f["plaintexts"][i,:] = plaintext
+                f["plaintexts"][i,j,:] = plaintext
                 cw308.write_plaintext(plaintext.tobytes())
                 scope.arm_single_trace()
-                time.sleep(0.05)
+                time.sleep(0.01)
                 cw308.encrypt()
                 f["power"][i,j,:] = scope.get_single_trace(channel='C3', nb_of_samples = nb_of_samples)
         f["trigger"][:] = scope.get_single_trace(channel='C1', nb_of_samples = nb_of_samples)

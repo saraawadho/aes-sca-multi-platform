@@ -11,14 +11,16 @@ def hamming_weight(x):
     return weight
 
 def template_building():
-    filepath = 'aes_traces_10k_key_0.hdf5'
-    with h5py.File(filepath, 'r') as f:
-        key = f["key"][:]
-        plaintexts = f["plaintexts"][:,:]
-        traces = (f["traces"][:,:5000]).astype(float)
-        nb_of_bits = f["traces"].attrs['bits_per_sample']
-        traces = (traces - (2**(nb_of_bits-1))) / (2**(nb_of_bits))
+    filepath = 'traces.hdf5'
+    first_round_start = 2000
+    first_round_stop = 4000
 
+    with h5py.File(filepath, 'r') as f:
+        key = f["keys"][0,:]
+        plaintexts = f["plaintexts"][0,:,:]
+        traces = (f["power"][0,:,first_round_start:first_round_stop]).astype(float)
+
+    print("Building Hamming weight templates...")
     hw = hamming_weight(AES.SBOX[plaintexts ^ key[np.newaxis,:]])
     nb_of_samples = traces.shape[1]
     nb_of_retained_samples = 10
@@ -44,19 +46,21 @@ def template_building():
         plt.ylabel("Mean")
         plt.title("Templates for S-box {:d}".format(i+1))
         plt.legend(["0","1","2","3","4","5","6","7","8"])
-        plt.savefig("exercise_templates_solution_{:d}.png".format(i+1), dpi=300)
+        plt.savefig("templates_build_sbox_{:d}.png".format(i+1), dpi=300)
         plt.close()
     return [indices, templates]
 
 def template_matching(indices, templates):
-    filepath = 'aes_traces_10k_key_1.hdf5'
-    with h5py.File(filepath, 'r') as f:
-        key = f["key"][:]
-        plaintexts = f["plaintexts"][:,:]
-        traces = (f["traces"][:,:5000]).astype(float)
-        nb_of_bits = f["traces"].attrs['bits_per_sample']
-        traces = (traces - (2**(nb_of_bits-1))) / (2**(nb_of_bits))
+    filepath = 'traces.hdf5'
+    first_round_start = 2000
+    first_round_stop = 4000
 
+    with h5py.File(filepath, 'r') as f:
+        key = f["keys"][1,:]
+        plaintexts = f["plaintexts"][1,:,:]
+        traces = (f["power"][1,:,first_round_start:first_round_stop]).astype(float)
+
+    print("Matching Hamming weight templates...")
     match = np.zeros((16,256),dtype=float)
     for i in tqdm(range(16)):
         traces_reduced = traces[:,indices[i,:]]
@@ -66,11 +70,11 @@ def template_matching(indices, templates):
             match[i,k] = -np.sum(np.sum(abs(traces_reduced - templates_selected)))
 
     for i in tqdm(range(16)):
-        plt.plot(np.arange(256), match[i,:])
+        plt.plot(np.arange(256), match[i,:], linewidth=0.5)
         plt.xlabel("Subkey")
         plt.ylabel("Match")
         plt.title("Subkey match for S-box {:d}".format(i+1))
-        plt.savefig("exercise_templates_solution_{:d}.png".format(i+17), dpi=300)
+        plt.savefig("templates_match_sbox_{:d}.png".format(i+1), dpi=300)
         plt.close()
 
     roundkey = np.argmax(match, axis=1)
