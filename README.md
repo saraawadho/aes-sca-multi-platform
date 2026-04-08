@@ -1,4 +1,4 @@
-# AES Side-Channel Analysis — STM32F4 & Multi-Dataset Study
+# AES Side-Channel Analysis — Multi-Dataset Study
 
 A practical side-channel analysis (SCA) project targeting AES-128 implementations across four different hardware platforms. The project covers classical attacks (SPA, DPA, CPA, Template Attack) and a deep learning-based attack, demonstrating both successful key recovery and the effect of hardware countermeasures like Boolean masking.
 
