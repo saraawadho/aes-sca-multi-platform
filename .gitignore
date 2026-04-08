@@ -1,0 +1,17 @@
+# Large dataset files — do not commit
+*.npy
+*.hdf5
+*.h5
+*.zip
+*.trs
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
