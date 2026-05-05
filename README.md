@@ -1,4 +1,4 @@
-# AES Side-Channel Analysis — Multi-Dataset Study
+# AES Side-Channel Analysis — STM32F4 & Multi-Dataset Study
 
 A practical side-channel analysis (SCA) project targeting AES-128 implementations across four different hardware platforms. The project covers classical attacks (SPA, DPA, CPA, Template Attack) and a deep learning-based attack, demonstrating both successful key recovery and the effect of hardware countermeasures like Boolean masking.
 
@@ -54,9 +54,8 @@ A two-phase profiling attack. Phase 1 builds a multivariate Gaussian template fo
 Uses ANSSI's pre-trained 6-layer MLP (352K parameters) to break Boolean-masked AES where all classical attacks fail. The model was trained on 50,000 profiling traces and outputs a 256-class probability over S-box intermediate values. Key recovery uses accumulated log-likelihood ranking across attack traces.
 
 **Script:** `exp_ascad/main_dl_ascad.py`
-
 ### 6. Cached Machine-Learning Experiments
-Additional additive experiments extend the classical baselines with cached RF, SVM, and 1D CNN models on the two currently available datasets in this workspace: STM32F4 (`traces.hdf5`) and AES-HD (`AES_HD_dataset/`). These scripts persist trained artifacts so repeated runs can reuse saved models instead of retraining. See `https://github.com/kadri-mufti/aes-sca-multi-platform` FOr ML experiments and code.
+Additional additive experiments extend the classical baselines with cached RF, SVM, and 1D CNN models on the two currently available datasets in this workspace: STM32F4 (`traces.hdf5`) and AES-HD (`AES_HD_dataset/`). These scripts persist trained artifacts so repeated runs can reuse saved models instead of retraining. Please check `https://github.com/kadri-mufti/aes-sca-multi-platform` For ML experiments on STM32F4 and AES-HD.
 
 **STM32F4 scripts:**
 - `exp_cortexm4/main_models_cached_stm32f4.py`
@@ -98,10 +97,10 @@ Additional additive experiments extend the classical baselines with cached RF, S
 
 | Attack | Model | Result | Notes |
 |--------|-------|--------|-------|
-| CPA | HD(SBOX_INV[ct⊕k] ⊕ (ct⊕k)) | Key: `0xDF` | Peak corr = 0.032 |
-| DPA | LSB of HD | Key: `0x32` | Peak DoM = 0.167 |
+| CPA | HD(SBOX_INV[ct⊕k] ⊕ (ct⊕k)) | **UNRELIABLE** — candidate 0xDF | Peak corr = 0.032 (noise level) |
+| DPA | LSB of HD | **UNRELIABLE** — candidate 0x32 | Peak DoM = 0.167 |
 
-**Key insight:** FPGAs leak via **Hamming Distance** (transition between states), not Hamming Weight (absolute value). Even with the correct model the signal is weak — this dataset is designed for deep learning attacks.
+**Key insight:** FPGAs leak via **Hamming Distance** (transition between states), not Hamming Weight (absolute value). Even with the correct leakage model, CPA and DPA give different candidates (0xDF vs 0x32) — confirming both failed. The signal is too weak for classical attacks; this dataset requires deep learning.
 
 #### Dataset 4 — ASCAD Masked AES (ATMega8515)
 
@@ -145,9 +144,7 @@ cw-stm32f4-aes-sca/
 │
 ├── exp_aeshd_hd/                # AES-HD FPGA with HD leakage model
 │   ├── main_recovery_cpa_aeshd_hd.py
-│   ├── main_recovery_dpa_aeshd_hd.py
-│   ├── main_models_cached_aeshd.py
-│   └── compare_all_methods_aeshd_pretty.py
+│   └── main_recovery_dpa_aeshd_hd.py
 │
 ├── exp_cortexm0/                # ARM Cortex-M0 public dataset
 │   ├── main_recovery_cpa_cortexm0.py
@@ -158,15 +155,13 @@ cw-stm32f4-aes-sca/
 │   ├── main_recovery_dpa_ascad.py   DPA (fails — masking)
 │   ├── main_dl_ascad.py             DL MLP attack (succeeds)
 │   └── aes.py
-
+│
 └── results/                     # All output plots
     ├── cross_dataset_comparison.png
     ├── stm32f4/                     SPA, DPA, CPA, Template plots
     ├── cortexm0/                    CPA and DPA plots
     ├── aeshd/                       CPA and DPA plots (HD model)
-    ├── ascad/                       CPA, DPA, DL score and rank plots
-    ├── stm32f4_ml/                  Cached ML summaries, comparison plots, model artifacts
-    └── aeshd_ml/                    Cached ML summaries, comparison plots, model artifacts
+    └── ascad/                       CPA, DPA, DL score and rank plots
 ```
 
 ---
@@ -203,15 +198,6 @@ python main_recovery_dpa_cortexm0.py
 cd exp_aeshd_hd
 python main_recovery_cpa_aeshd_hd.py
 python main_recovery_dpa_aeshd_hd.py
-python main_models_cached_aeshd.py --dataset ..\analysis\AES_HD_dataset --output-dir ..\results\aeshd_ml
-python compare_all_methods_aeshd_pretty.py --results-dir ..\results\aeshd_ml
-```
-
-### STM32F4 cached ML experiments
-```bash
-cd exp_cortexm4
-python main_models_cached_stm32f4.py --hdf5 ..\analysis\traces.hdf5 --output-dir ..\results\stm32f4_ml
-python compare_all_methods_stm32f4_pretty.py --results-dir ..\results\stm32f4_ml
 ```
 
 ### ASCAD — download ASCAD_data.zip from data.gouv.fr/ASCAD, extract ASCAD.h5 and MLP model
@@ -221,7 +207,12 @@ python main_recovery_cpa_ascad.py    # expected: FAIL
 python main_recovery_dpa_ascad.py    # expected: FAIL
 python main_dl_ascad.py              # expected: SUCCESS
 ```
-
+### STM32F4 cached ML experiments [NOTE: please check "https://github.com/kadri-mufti/aes-sca-multi-platform" kadri’s repo README file for more details]
+```bash
+cd exp_cortexm4
+python main_models_cached_stm32f4.py --hdf5 ..\analysis\traces.hdf5 --output-dir ..\results\stm32f4_ml
+python compare_all_methods_stm32f4_pretty.py --results-dir ..\results\stm32f4_ml
+```
 ---
 
 ## Key Takeaways
